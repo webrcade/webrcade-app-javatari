@@ -1,0 +1,4 @@
+[submodule "modules/javatari.js"]
+	path = modules/javatari.js
+	url = https://github.com/raz0red/javatari.js.git
+	branch = webrcade
