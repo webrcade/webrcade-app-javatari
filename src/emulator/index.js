@@ -8,107 +8,156 @@ import {
 
 export class Emulator {
   constructor(app, debug = false) {
-    // this.controller1 = new Controller(new DefaultKeyCodeToControlMapping());
-    // this.controllers = new Controllers([
-    //   this.controller1,
-    //   new Controller()
-    // ]);
+    this.controller1 = new Controller(new DefaultKeyCodeToControlMapping());
+    this.controllers = new Controllers([
+      this.controller1,
+      new Controller()
+    ]);
 
+    this.started = false;
     this.app = app;
-    // this.js7800 = null;
-    // this.romBlob = null;
+    this.javatari = null;
+    this.romBlob = null;
     this.debug = debug;
+    this.swapJoysticks = false;
     this.debugDiv = null;
+    this.targetFps = 60;
 
     if (this.debug) {
       this.debugDiv = addDebugDiv();      
     }
   }
 
-  // setRomBlob(blob) {      
-  //   console.log(blob);  
-  //   if (blob.size === 0) {
-  //     throw new Error("The size is invalid (0 bytes).");
-  //   }
-  //   this.romBlob = blob;
-  // }
+  setRomBlob(blob) {      
+    if (blob.size === 0) {
+      throw new Error("The size is invalid (0 bytes).");
+    }
+    this.romBlob = blob;
+  }
+
+  setSwapJoysticks(swap) {
+    this.swapJoysticks = (swap === true);
+  }
   
-  // TODO:
-  // | 15 | Console | Left Difficulty
-  // | 16 | Console | Right Difficulty
+  pollControls = () => {
+    const { javatari, controllers, app, swapJoysticks } = this;
+    const { console } = javatari.room;
 
-  // pollControls = (input, isDual, isSwap) => {
-  //   const { app, controllers, controller1 } = this;
+    let SWCHA = 0xff;  // All directions of both controllers OFF
+    let SWCHB = 0x0b; // Reset OFF; Select OFF; B/W OFF; Difficult A/B OFF (Amateur)
 
-  //   controllers.poll();
-  //   for (let i = 0; i < 2; i++) {
-  //     const offset = i * 6;
-  //     input[0 + offset] = controllers.isControlDown(i, CIDS.RIGHT) ||
-  //       (isDual && i && controller1.isAxisRight(1));
-  //     input[1 + offset] = controllers.isControlDown(i, CIDS.LEFT) ||
-  //       (isDual && i && controller1.isAxisLeft(1));
-  //     input[2 + offset] = controllers.isControlDown(i, CIDS.DOWN) ||
-  //       (isDual && i && controller1.isAxisDown(1));
-  //     input[3 + offset] = controllers.isControlDown(i, CIDS.UP) ||
-  //       (isDual && i && controller1.isAxisUp(1));
-  //     input[4 + offset] = controllers.isControlDown(i, isSwap ? CIDS.B : CIDS.A);
-  //     input[5 + offset] = controllers.isControlDown(i, isSwap ? CIDS.A : CIDS.B);
-  //     if (controllers.isControlDown(i, CIDS.ESCAPE)) {
-  //       app.exit();
-  //     }
-  //   }
+    controllers.poll();
 
-    // Reset
-    // input[12] = controllers.isControlDown(0, CIDS.START) ||
-    //   controllers.isControlDown(1, CIDS.START);
+    for (let i = 0; i < 2; i++) {
+      const joy2 = (i === 1 ? !swapJoysticks : swapJoysticks);
+      if (controllers.isControlDown(i, CIDS.RIGHT)) {
+        SWCHA &= (joy2 ? 0xf7 : 0x7f);
+      }
+      if (controllers.isControlDown(i, CIDS.LEFT)) {
+        SWCHA &= (joy2 ? 0xfb : 0xbf);
+      }
+      if (controllers.isControlDown(i, CIDS.UP)) {
+        SWCHA &= (joy2 ? 0xfe : 0xef);
+      }
+      if (controllers.isControlDown(i, CIDS.DOWN)) {
+        SWCHA &= (joy2 ? 0xfd : 0xdf);
+      }
+      if (controllers.isControlDown(i, CIDS.ESCAPE)) {
+        app.exit();
+      }
 
-    // // Select
-    // input[13] = controllers.isControlDown(0, CIDS.SELECT) ||
-    //   controllers.isControlDown(1, CIDS.SELECT);    
-  // }
+      console.joyButtonPressed(joy2 ? 1 : 0, controllers.isControlDown(i, CIDS.A));
+    }
 
-  // loadJs7800() {
-  //   return new Promise((resolve, reject) => {
-  //     const script = document.createElement('script');
-  //     document.body.appendChild(script);
-  //     script.src = 'js/js7800.min.js';
-  //     script.async = true;
-  //     script.onload = () => {        
-  //       const js7800 = window.js7800;
-  //       if (js7800) {
-  //         this.js7800 =  js7800;
-  //         resolve(js7800);          
-  //       } else {
-  //         reject('An error occurred loading the Atari 7800 module');
-  //       }
-  //     };
-  //   });
-  // }
+    if (controllers.isControlDown(0, CIDS.START) || 
+      controllers.isControlDown(1, CIDS.START)) {
+      SWCHB &= 0xfe;
+    }    
+    if (controllers.isControlDown(0, CIDS.SELECT) || 
+      controllers.isControlDown(1, CIDS.SELECT)) {
+      SWCHB &= 0xfd;
+    }    
 
-  // getCart = (blob) => {      
-  //   return new Promise((resolve, reject) => {
-  //     const reader = new FileReader();
-  //     reader.onerror = () => {
-  //       reader.abort();
-  //       reject("Error reading cartridge: " + reader.error);
-  //     };
+    //joyButtonPressed
+    console.updateControls(SWCHA, SWCHB);
+  }
+
+  loadJavatari() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      document.body.appendChild(script);
+      script.src = 'js/javatari.js';
+      script.async = true;
+      script.onload = () => {         
+        const javatari = window.Javatari;
+        if (javatari) {       
+          this.javatari =  javatari;
+
+          javatari.videoStandardCallback = (std) => {            
+            const canvas = document.getElementById('jt-screen-canvas');
+            if (canvas) {
+              if (std.targetFPS === 50) {
+                this.targetFps = 50;
+                canvas.classList.add('pal-canvas');
+              } else {
+                this.targetFps = 60;
+                canvas.classList.remove('pal-canvas');
+              }
+            }
+          };    
+
+          let loadingHidden = false;
+          let frameCount = 0;          
+          javatari.frameCallback = () => {
+            // TODO: Debug info (FPS, etc.)
+
+            if (!loadingHidden) {
+              // Hack to try to avoid scroll when determining FPS
+              if (++frameCount >= (this.targetFps << 1)) {    
+                loadingHidden = true;
+                this.app.hideLoading();
+              }
+            }                        
+            this.pollControls();
+          }
+
+          resolve(javatari);          
+        } else {
+          reject('An error occurred loading the Atari 2600 module');
+        }
+      };
+    });
+  }
+
+  getCart = (blob) => {      
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => {
+        reader.abort();
+        reject("Error reading cartridge: " + reader.error);
+      };
   
-  //     reader.onload = () => {
-  //       const result = reader.result;
-  //       const len = result.length;
-  //       const cart = new Array(len);
-  //       for (let i = 0; i < len; i++) {
-  //         cart[i] = result.charCodeAt(i);
-  //       }
-  //       resolve(cart);
-  //     };
-  //     reader.readAsBinaryString(blob);
-  //   });
-  // };
+      reader.onload = () => {
+        const result = reader.result;
+        const len = result.length;
+        const cart = new Array(len);
+        for (let i = 0; i < len; i++) {
+          cart[i] = result.charCodeAt(i);
+        }
+        resolve(cart);
+      };
+      reader.readAsBinaryString(blob);
+    });
+  };
 
   async start() {
-    // const { js7800, romBlob, app } = this;
-    // const { Main, Region, Input } = js7800;
+    const { javatari, romBlob, app } = this;
+
+    if (this.started) {
+      return;
+    }
+
+    this.started = true;
 
     // if (this.debug) {
     //   Main.setDebugCallback((dbg) => {
@@ -116,19 +165,39 @@ export class Emulator {
     //   });
     // }
 
-    // const props = { noTitle: true, debug: this.debug };
-    // Main.init('js7800__target', props);
-    // // TODO: High scores support currently disabled
-    // Main.setHighScoreCallback(new Main.HighScoreCallback());
-    // Main.setErrorHandler((e) => { app.exit(e); });
-    // Input.setPollInputCallback(this.pollControls);
-    // Region.setPaletteIndex(0);
-
-    // try {
-    //     const cart = await this.getCart(romBlob);
-    //     Main.startEmulation(cart);
-    // } catch (e) {
-    //   app.exit(e);
-    // }
+    try {
+      const cart = await this.getCart(romBlob);
+      const rom = new window.jt.ROM('rom', cart, null);
+      javatari.fileLoader.loadROM(rom, 0, 0, false);
+    } catch (e) {
+      app.exit(e);
+    }
   }
 }
+
+// var SWCHA = 0xff;  // All directions of both controllers OFF
+// var SWCHB = 0x0b; // Reset OFF; Select OFF; B/W OFF; Difficult A/B OFF (Amateur)
+//   switch (control) {
+//     case controls.JOY0_UP:        if (state) SWCHA &= 0xef; else SWCHA |= 0x10; return;	//  0 = Pressed
+//     case controls.JOY0_DOWN:      if (state) SWCHA &= 0xdf; else SWCHA |= 0x20; return;
+//     case controls.PADDLE1_BUTTON:
+//     case controls.JOY0_LEFT:      if (state) SWCHA &= 0xbf; else SWCHA |= 0x40; return;
+//     case controls.PADDLE0_BUTTON:
+//     case controls.JOY0_RIGHT:     if (state) SWCHA &= 0x7f; else SWCHA |= 0x80; return;
+//     case controls.JOY1_UP:        if (state) SWCHA &= 0xfe; else SWCHA |= 0x01; return;
+//     case controls.JOY1_DOWN:      if (state) SWCHA &= 0xfd; else SWCHA |= 0x02; return;
+//     case controls.JOY1_LEFT:      if (state) SWCHA &= 0xfb; else SWCHA |= 0x04; return;
+//     case controls.JOY1_RIGHT:     if (state) SWCHA &= 0xf7; else SWCHA |= 0x08; return;
+
+//     case controls.RESET:          if (state) SWCHB &= 0xfe; else SWCHB |= 0x01; return;
+//     case controls.SELECT:         if (state) SWCHB &= 0xfd; else SWCHB |= 0x02; return;
+// }
+// // Toggles
+// if (!state) return;
+// switch (control) {
+//     case controls.BLACK_WHITE: if ((SWCHB & 0x08) == 0) SWCHB |= 0x08; else SWCHB &= 0xf7;		//	0 = B/W, 1 = Color
+//         bus.getTia().getVideoOutput().showOSD((SWCHB & 0x08) != 0 ? "COLOR" : "B/W", true); return;
+//     case controls.DIFFICULTY0: if ((SWCHB & 0x40) == 0) SWCHB |= 0x40; else SWCHB &= 0xbf; 		//  0 = Beginner, 1 = Advanced
+//         bus.getTia().getVideoOutput().showOSD((SWCHB & 0x40) != 0 ? "P1 Expert" : "P1 Novice", true); return;
+//     case controls.DIFFICULTY1: if ((SWCHB & 0x80) == 0) SWCHB |= 0x80; else SWCHB &= 0x7f;		//  0 = Beginner, 1 = Advanced
+//         bus.getTia().getVideoOutput().showOSD((SWCHB & 0x80) != 0 ? "P2 Expert" : "P2 Novice", true); return;

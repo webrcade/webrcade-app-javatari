@@ -1,38 +1,35 @@
-body {
-    // overflow: hidden !important;
-    // margin: 0 !important;
-    // padding: 0 im !important;
-    // display: inline-block !important;
+#javatari-screen {
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 
-// #js7800__controls {
-//   display: none;
-// }
+#jt-screen-canvas {
+  // border: 1px solid red;
+  width: 96vw !important;
+  height: 96vh !important;
 
-// #js7800__inner-container {
-//   width: 100vw;
-//   height: 100vh;
-//   position: relative;
-//   text-align: left;
-// }
+  max-width: calc(96vh*1.435); // NTSC
+  max-height: calc(96vw*.697); // NTSC
 
-// #js7800 {
-//   border: 0;
-//   padding: 0;
-//   margin: 0;
-//   border-radius: 0;
-//   box-shadow: 0 0 0 0;
-//   width: unset !important;
-// }
+  image-rendering: -moz-crisp-edges !important;
+  image-rendering: -webkit-crisp-edges !important;
+  image-rendering: pixelated !important;
+  image-rendering: crisp-edges !important;  
+}
 
-// #js7800__screen {
-//   top: 50%;
-//   left: 50%;
-//   transform: translate(-50%, -50%);
-//   position: absolute;
-//   width: 96vw !important;
-//   height: 96vh !important;
-//   max-width: calc(96vh*1.333) !important;
-//   max-height: calc(96vw*.75) !important;
-//   // border: 1px solid red;
-// }
+.pal-canvas {
+  max-width: calc(96vh*1.328) !important; // PAL
+  max-height: calc(96vw*.75) !important; // PAL
+}
+
+#javatari {  
+  display: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  position: absolute;  
+}

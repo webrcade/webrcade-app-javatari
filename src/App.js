@@ -5,59 +5,80 @@ import './App.scss';
 import '@webrcade/app-common/dist/index.css'
 
 class App extends WebrcadeApp {
-  // emulator = null;
+  emulator = null;
+
+  constructor() {
+    super();
+
+    this.state.showLoading = true;
+    this.state.started = false;
+  }
 
   componentDidMount() {
     super.componentDidMount();
 
     // Create the emulator
-    // if (this.emulator === null) {
-    //   this.emulator = new Emulator(this, this.isDebug());
-    // }
+    if (this.emulator === null) {
+      this.emulator = new Emulator(this, this.isDebug());
+    }
 
     const { appProps, emulator, ModeEnum } = this;
 
     // Get the ROM location that was specified
     const rom = appProps.rom;
-    if (!rom) throw new Error("A ROM file was not specified.");
+    if (!rom) throw new Error("A ROM file was not specified."); 
+    // Swap controllers
+    const swap = appProps.swap;
+    if (swap) {
+      emulator.setSwapJoysticks(swap);
+    }
 
-    // emulator.loadJs7800()
-    //   .then(() => new FetchAppData(rom).fetch())    
-    //   .then(response => response.blob())
-    //   .then(blob => new Unzip().unzip(blob, [".a78", ".bin"], [".a78"]))
-    //   .then(blob => emulator.setRomBlob(blob))
-    //   .then(() => this.setState({ mode: ModeEnum.LOADED }))
-    //   .catch(msg => {
-    //     this.exit("Error fetching ROM: " + msg);
-    //   })
+    emulator.loadJavatari()
+      .then(() => new FetchAppData(rom).fetch())    
+      .then(response => response.blob())
+      .then(blob => new Unzip().unzip(blob, [".a26", ".bin"], [".a26"]))
+      .then(blob => emulator.setRomBlob(blob))
+      .then(() => this.setState({ mode: ModeEnum.LOADED }))
+      .catch(msg => {
+        this.exit("Error fetching ROM: " + msg);
+      })
   }
 
   componentDidUpdate() {
-    // const { mode } = this.state;
-    // const { ModeEnum, emulator } = this;
+    const { mode, started } = this.state;
+    const { ModeEnum, emulator } = this;
 
-    // if (mode === ModeEnum.LOADED) {
-    //   window.focus();
-    //   // Start the emulator
-    //   emulator.start();
-    // }
+    if (mode === ModeEnum.LOADED && !started) {
+      this.setState({started: true});
+
+      window.focus();
+      // Start the emulator
+      emulator.start();                  
+    }
+  }
+
+  hideLoading() {
+    const { jtdiv } = this;
+
+    this.setState({showLoading: false});
+    jtdiv.style.display = 'inline-block';
   }
 
   renderCanvas() {
     return (
-      // <div id="js7800__target"></div>      
-      <div></div>      
+      <div id="javatari" ref={(jtdiv) => { this.jtdiv = jtdiv; }}>
+        <div id="javatari-screen"></div>
+      </div>      
     );
   }
 
   render() {
-    const { mode } = this.state;
-    const { ModeEnum } = this;
+    const { showLoading } = this.state;
 
     return (
       <>
-        { mode === ModeEnum.LOADING ? this.renderLoading() : null}
-        { mode === ModeEnum.LOADED ? this.renderCanvas() : null}
+        { showLoading ? this.renderLoading() : null}
+        { this.renderCanvas() }
       </>
     );
   }
