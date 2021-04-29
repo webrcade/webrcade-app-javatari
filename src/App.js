@@ -1,4 +1,4 @@
-import { WebrcadeApp, FetchAppData, Unzip } from '@webrcade/app-common'
+import { WebrcadeApp, FetchAppData, Unzip, UrlUtil } from '@webrcade/app-common'
 import { Emulator } from './emulator'
 
 import './App.scss';
@@ -37,7 +37,7 @@ class App extends WebrcadeApp {
       .then(() => new FetchAppData(rom).fetch())    
       .then(response => response.blob())
       .then(blob => new Unzip().unzip(blob, [".a26", ".bin"], [".a26"]))
-      .then(blob => emulator.setRomBlob(blob))
+      .then(blob => emulator.setRom(blob, UrlUtil.getFileName(rom)))
       .then(() => this.setState({ mode: ModeEnum.LOADED }))
       .catch(msg => {
         this.exit("Error fetching ROM: " + msg);

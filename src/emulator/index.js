@@ -18,6 +18,7 @@ export class Emulator {
     this.app = app;
     this.javatari = null;
     this.romBlob = null;
+    this.romName = null;
     this.debug = debug;
     this.swapJoysticks = false;
     this.debugDiv = null;
@@ -28,11 +29,12 @@ export class Emulator {
     }
   }
 
-  setRomBlob(blob) {      
+  setRom(blob, name) {      
     if (blob.size === 0) {
       throw new Error("The size is invalid (0 bytes).");
     }
     this.romBlob = blob;
+    this.romName = name ? name : 'rom';
   }
 
   setSwapJoysticks(swap) {
@@ -151,7 +153,7 @@ export class Emulator {
   };
 
   async start() {
-    const { javatari, romBlob, app } = this;
+    const { javatari, romBlob, app, romName } = this;
 
     if (this.started) {
       return;
@@ -166,8 +168,9 @@ export class Emulator {
     // }
 
     try {
-      const cart = await this.getCart(romBlob);
-      const rom = new window.jt.ROM('rom', cart, null);
+      console.log(romName);
+      const cart = await this.getCart(romBlob);      
+      const rom = new window.jt.ROM(romName, cart, null);
       javatari.fileLoader.loadROM(rom, 0, 0, false);
     } catch (e) {
       app.exit(e);
