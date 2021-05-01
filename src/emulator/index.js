@@ -178,6 +178,8 @@ export class Emulator {
   }
 }
 
+// TODO: Difficulty switches and black/white
+
 // var SWCHA = 0xff;  // All directions of both controllers OFF
 // var SWCHB = 0x0b; // Reset OFF; Select OFF; B/W OFF; Difficult A/B OFF (Amateur)
 //   switch (control) {
