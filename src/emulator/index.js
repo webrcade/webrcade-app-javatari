@@ -3,7 +3,9 @@ import {
   Controller,
   Controllers,
   DefaultKeyCodeToControlMapping,
-  addDebugDiv
+  addDebugDiv,
+  Resources, 
+  TEXT_IDS 
 } from "@webrcade/app-common"
 
 export class Emulator {
@@ -170,10 +172,11 @@ export class Emulator {
     try {
       console.log(romName);
       const cart = await this.getCart(romBlob);      
-      const rom = new window.jt.ROM(romName, cart, null);
+      let rom = new window.jt.ROM(romName, cart, null);
       javatari.fileLoader.loadROM(rom, 0, 0, false);
     } catch (e) {
-      app.exit(e);
+      console.error(e); // TODO: Proper logging
+      app.exit(Resources.getText(TEXT_IDS.ERROR_LOADING_GAME));
     }
   }
 }
