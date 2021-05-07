@@ -25,6 +25,7 @@ export class Emulator {
     this.swapJoysticks = false;
     this.debugDiv = null;
     this.targetFps = 60;
+    this.paused = false;
 
     if (this.debug) {
       this.debugDiv = addDebugDiv();      
@@ -54,6 +55,21 @@ export class Emulator {
 
     for (let i = 0; i < 2; i++) {
       const joy2 = (i === 1 ? !swapJoysticks : swapJoysticks);
+
+      if (controllers.isControlDown(i, CIDS.ESCAPE)) {
+        if (this.pause(true)) {
+          controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
+            .then(() => controllers.setEnabled(false))
+            .then(() => { app.pause(() => { 
+                controllers.setEnabled(true);
+                this.pause(false); 
+              }); 
+            })
+            .catch((e) => console.error(e))
+          return;
+        }
+      }
+
       if (controllers.isControlDown(i, CIDS.RIGHT)) {
         SWCHA &= (joy2 ? 0xf7 : 0x7f);
       }
@@ -65,9 +81,6 @@ export class Emulator {
       }
       if (controllers.isControlDown(i, CIDS.DOWN)) {
         SWCHA &= (joy2 ? 0xfd : 0xdf);
-      }
-      if (controllers.isControlDown(i, CIDS.ESCAPE)) {
-        app.exit();
       }
 
       console.joyButtonPressed(joy2 ? 1 : 0, controllers.isControlDown(i, CIDS.A));
@@ -132,6 +145,16 @@ export class Emulator {
       };
     });
   }
+
+  pause(p) {
+    const { javatari } = this;
+    if ((p && !this.paused) || (!p && this.paused)) {
+      this.paused = p;
+      javatari.room.console.systemPause(p);
+      return true;
+    }
+    return false;
+  }  
 
   getCart = (blob) => {      
     return new Promise((resolve, reject) => {

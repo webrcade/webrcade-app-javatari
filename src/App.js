@@ -1,7 +1,8 @@
 import {
   WebrcadeApp,
   FetchAppData,
-  Unzip, UrlUtil,
+  Unzip, 
+  UrlUtil,
   Resources,
   TEXT_IDS
 } from '@webrcade/app-common'
@@ -89,6 +90,7 @@ class App extends WebrcadeApp {
     return (
       <>
         { super.render()}
+        { mode === ModeEnum.PAUSE ? this.renderPauseScreen() : null}
         { showLoading && mode !== ModeEnum.ERROR ? this.renderLoading() : null}
         { this.renderCanvas()}
       </>
