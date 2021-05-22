@@ -5,7 +5,8 @@ import {
   DefaultKeyCodeToControlMapping,
   addDebugDiv,
   Resources, 
-  TEXT_IDS 
+  TEXT_IDS,
+  hideInactiveMouse
 } from "@webrcade/app-common"
 
 export class Emulator {
@@ -177,7 +178,7 @@ export class Emulator {
     });
   };
 
-  async start() {
+  async start(screen) {
     const { javatari, romBlob, app, romName } = this;
 
     if (this.started) {
@@ -185,6 +186,8 @@ export class Emulator {
     }
 
     this.started = true;
+
+    hideInactiveMouse(screen);
 
     // if (this.debug) {
     //   Main.setDebugCallback((dbg) => {

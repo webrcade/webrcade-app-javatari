@@ -64,7 +64,7 @@ class App extends WebrcadeApp {
 
       window.focus();
       // Start the emulator
-      emulator.start();
+      emulator.start(this.screen);
     }
   }
 
@@ -78,7 +78,7 @@ class App extends WebrcadeApp {
   renderCanvas() {
     return (
       <div id="javatari" ref={(jtdiv) => { this.jtdiv = jtdiv; }}>
-        <div id="javatari-screen"></div>
+        <div ref={screen => { this.screen = screen; }}  id="javatari-screen"></div>
       </div>
     );
   }
