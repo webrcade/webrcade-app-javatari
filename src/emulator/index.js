@@ -1,36 +1,40 @@
 import {
   CIDS,
-  Controller,
-  Controllers,
-  DefaultKeyCodeToControlMapping,
   addDebugDiv,
   Resources, 
   TEXT_IDS,
-  hideInactiveMouse
+  AppWrapper
 } from "@webrcade/app-common"
 
-export class Emulator {
+export class Emulator extends AppWrapper {
   constructor(app, debug = false) {
-    this.controller1 = new Controller(new DefaultKeyCodeToControlMapping());
-    this.controllers = new Controllers([
-      this.controller1,
-      new Controller()
-    ]);
+    super(app, debug);
 
-    this.started = false;
-    this.app = app;
     this.javatari = null;
     this.romBlob = null;
     this.romName = null;
-    this.debug = debug;
     this.swapJoysticks = false;
     this.debugDiv = null;
     this.targetFps = 60;
-    this.paused = false;
 
     if (this.debug) {
       this.debugDiv = addDebugDiv();      
     }
+  }
+
+  createStorage() {
+    // no storage
+    return null;
+  }
+
+  createVisibilityMonitor() {
+    // no visibility monitor necessary
+    return null;
+  }
+
+  createAudioProcessor() {
+    // no audio processor necessary
+    return null;
   }
 
   setRom(blob, name) {      
@@ -96,11 +100,13 @@ export class Emulator {
       SWCHB &= 0xfd;
     }    
 
-    //joyButtonPressed
+    // joyButtonPressed
     console.updateControls(SWCHA, SWCHB);
   }
 
   loadJavatari() {
+    const { app } = this;
+    
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       document.body.appendChild(script);
@@ -111,6 +117,9 @@ export class Emulator {
         if (javatari) {       
           this.javatari =  javatari;
 
+          javatari.audioCallback = (running) => {
+            setTimeout(() => app.setShowOverlay(!running), 50);
+          };      
           javatari.videoStandardCallback = (std) => {            
             const canvas = document.getElementById('jt-screen-canvas');
             if (canvas) {
@@ -178,23 +187,14 @@ export class Emulator {
     });
   };
 
-  async start(screen) {
+  async onStart(screen) {
     const { javatari, romBlob, app, romName } = this;
-
-    if (this.started) {
-      return;
-    }
-
-    this.started = true;
-
-    hideInactiveMouse(screen);
 
     // if (this.debug) {
     //   Main.setDebugCallback((dbg) => {
     //     this.debugDiv.innerHTML = dbg;
     //   });
     // }
-
     try {
       console.log(romName);
       const cart = await this.getCart(romBlob);      
