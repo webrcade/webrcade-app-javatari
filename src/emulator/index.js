@@ -1,9 +1,10 @@
-import {
-  CIDS,
+import {  
   addDebugDiv,
   Resources, 
-  TEXT_IDS,
-  AppWrapper
+  AppWrapper,
+  CIDS,
+  LOG,
+  TEXT_IDS  
 } from "@webrcade/app-common"
 
 export class Emulator extends AppWrapper {
@@ -50,7 +51,7 @@ export class Emulator extends AppWrapper {
   }
   
   pollControls = () => {
-    const { javatari, controllers, app, swapJoysticks } = this;
+    const { app, controllers, javatari, swapJoysticks } = this;
     const { console } = javatari.room;
 
     let SWCHA = 0xff;  // All directions of both controllers OFF
@@ -70,7 +71,7 @@ export class Emulator extends AppWrapper {
                 this.pause(false); 
               }); 
             })
-            .catch((e) => console.error(e))
+            .catch((e) => LOG.error(e))
           return;
         }
       }
@@ -196,12 +197,12 @@ export class Emulator extends AppWrapper {
     //   });
     // }
     try {
-      console.log(romName);
+      LOG.info(romName);
       const cart = await this.getCart(romBlob);      
       let rom = new window.jt.ROM(romName, cart, null);
       javatari.fileLoader.loadROM(rom, 0, 0, false);
     } catch (e) {
-      console.error(e); // TODO: Proper logging
+      LOG.error(e);
       app.exit(Resources.getText(TEXT_IDS.ERROR_LOADING_GAME));
     }
   }
