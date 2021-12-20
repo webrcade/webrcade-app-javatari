@@ -1,9 +1,12 @@
 import {
+  romNameScorer,
+  AppRegistry,
   FetchAppData,
   Resources,
   Unzip, 
   UrlUtil,  
   WebrcadeApp,  
+  APP_TYPE_KEYS,
   LOG,
   TEXT_IDS
 } from '@webrcade/app-common'
@@ -31,6 +34,15 @@ class App extends WebrcadeApp {
 
     const { appProps, emulator, ModeEnum } = this;
 
+    // Determine extensions
+    const exts = 
+      AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, false);
+    const extsNotUnique = 
+      AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, true);
+
+    console.log(exts);
+    console.log(extsNotUnique);
+
     try {
       // Get the ROM location that was specified
       const rom = appProps.rom;
@@ -44,7 +56,7 @@ class App extends WebrcadeApp {
       emulator.loadJavatari()
         .then(() => new FetchAppData(rom).fetch())
         .then(response => response.blob())
-        .then(blob => new Unzip().unzip(blob, [".a26", ".bin"], [".a26"]))
+        .then(blob => new Unzip().unzip(blob, extsNotUnique, exts, romNameScorer))
         .then(blob => emulator.setRom(blob, UrlUtil.getFileName(rom)))
         .then(() => this.setState({ mode: ModeEnum.LOADED }))
         .catch(msg => {
