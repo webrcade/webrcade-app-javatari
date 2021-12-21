@@ -40,9 +40,6 @@ class App extends WebrcadeApp {
     const extsNotUnique = 
       AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, true);
 
-    console.log(exts);
-    console.log(extsNotUnique);
-
     try {
       // Get the ROM location that was specified
       const rom = appProps.rom;
@@ -56,7 +53,7 @@ class App extends WebrcadeApp {
       emulator.loadJavatari()
         .then(() => new FetchAppData(rom).fetch())
         .then(response => response.blob())
-        .then(blob => new Unzip().unzip(blob, extsNotUnique, exts, romNameScorer))
+        .then(blob => new Unzip().setDebug(this.isDebug()).unzip(blob, extsNotUnique, exts, romNameScorer))
         .then(blob => emulator.setRom(blob, UrlUtil.getFileName(rom)))
         .then(() => this.setState({ mode: ModeEnum.LOADED }))
         .catch(msg => {
