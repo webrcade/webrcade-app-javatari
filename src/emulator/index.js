@@ -1,10 +1,11 @@
-import {  
+import {
   addDebugDiv,
-  Resources, 
+  settings,
+  Resources,
   AppWrapper,
   CIDS,
   LOG,
-  TEXT_IDS  
+  TEXT_IDS
 } from "@webrcade/app-common"
 
 export class Emulator extends AppWrapper {
@@ -19,7 +20,7 @@ export class Emulator extends AppWrapper {
     this.targetFps = 60;
 
     if (this.debug) {
-      this.debugDiv = addDebugDiv();      
+      this.debugDiv = addDebugDiv();
     }
   }
 
@@ -38,7 +39,7 @@ export class Emulator extends AppWrapper {
     return null;
   }
 
-  setRom(blob, name) {      
+  setRom(blob, name) {
     if (blob.size === 0) {
       throw new Error("The size is invalid (0 bytes).");
     }
@@ -49,7 +50,7 @@ export class Emulator extends AppWrapper {
   setSwapJoysticks(swap) {
     this.swapJoysticks = (swap === true);
   }
-  
+
   pollControls = () => {
     const { app, controllers, javatari, swapJoysticks } = this;
     const { console } = javatari.room;
@@ -66,10 +67,10 @@ export class Emulator extends AppWrapper {
         if (this.pause(true)) {
           controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
             .then(() => controllers.setEnabled(false))
-            .then(() => { app.pause(() => { 
+            .then(() => { app.pause(() => {
                 controllers.setEnabled(true);
-                this.pause(false); 
-              }); 
+                this.pause(false);
+              });
             })
             .catch((e) => LOG.error(e))
           return;
@@ -92,14 +93,14 @@ export class Emulator extends AppWrapper {
       console.joyButtonPressed(joy2 ? 1 : 0, controllers.isControlDown(i, CIDS.A));
     }
 
-    if (controllers.isControlDown(0, CIDS.START) || 
+    if (controllers.isControlDown(0, CIDS.START) ||
       controllers.isControlDown(1, CIDS.START)) {
       SWCHB &= 0xfe;
-    }    
-    if (controllers.isControlDown(0, CIDS.SELECT) || 
+    }
+    if (controllers.isControlDown(0, CIDS.SELECT) ||
       controllers.isControlDown(1, CIDS.SELECT)) {
       SWCHB &= 0xfd;
-    }    
+    }
 
     // joyButtonPressed
     console.updateControls(SWCHA, SWCHB);
@@ -107,23 +108,25 @@ export class Emulator extends AppWrapper {
 
   loadJavatari() {
     const { app } = this;
-    
+
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       document.body.appendChild(script);
       script.src = 'js/javatari.js';
       script.async = true;
-      script.onload = () => {         
+      script.onload = () => {
         const javatari = window.Javatari;
-        if (javatari) {       
+        if (javatari) {
           this.javatari =  javatari;
 
           javatari.audioCallback = (running) => {
             setTimeout(() => app.setShowOverlay(!running), 50);
-          };      
-          javatari.videoStandardCallback = (std) => {            
-            const canvas = document.getElementById('jt-screen-canvas');
+          };
+          let canvas = null;
+          javatari.videoStandardCallback = (std) => {
+            canvas = document.getElementById('jt-screen-canvas');
             if (canvas) {
+              // Bilinear filter
               if (std.targetFPS === 50) {
                 this.targetFps = 50;
                 canvas.classList.add('pal-canvas');
@@ -132,24 +135,28 @@ export class Emulator extends AppWrapper {
                 canvas.classList.remove('pal-canvas');
               }
             }
-          };    
+          };
 
           let loadingHidden = false;
-          let frameCount = 0;          
+          let frameCount = 0;
           javatari.frameCallback = () => {
             // TODO: Debug info (FPS, etc.)
-
+            if (canvas != null) {
+              if (settings.isBilinearFilterEnabled() && canvas.style['image-rendering'] !== 'auto') {
+                canvas.style.setProperty("image-rendering", "auto", "important");
+              }
+            }
             if (!loadingHidden) {
               // Hack to try to avoid scroll when determining FPS
-              if (++frameCount >= (this.targetFps << 1)) {    
+              if (++frameCount >= (this.targetFps << 1)) {
                 loadingHidden = true;
                 this.app.hideLoading();
               }
-            }                        
+            }
             this.pollControls();
           }
 
-          resolve(javatari);          
+          resolve(javatari);
         } else {
           reject('An error occurred loading the Atari 2600 module');
         }
@@ -165,16 +172,16 @@ export class Emulator extends AppWrapper {
       return true;
     }
     return false;
-  }  
+  }
 
-  getCart = (blob) => {      
+  getCart = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = () => {
         reader.abort();
         reject("Error reading cartridge: " + reader.error);
       };
-  
+
       reader.onload = () => {
         const result = reader.result;
         const len = result.length;
@@ -198,7 +205,7 @@ export class Emulator extends AppWrapper {
     // }
     try {
       LOG.info(romName);
-      const cart = await this.getCart(romBlob);      
+      const cart = await this.getCart(romBlob);
       let rom = new window.jt.ROM(romName, cart, null);
       javatari.fileLoader.loadROM(rom, 0, 0, false);
     } catch (e) {

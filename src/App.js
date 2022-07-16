@@ -1,11 +1,12 @@
 import {
   romNameScorer,
+  settings,
   AppRegistry,
   FetchAppData,
   Resources,
-  Unzip, 
-  UrlUtil,  
-  WebrcadeApp,  
+  Unzip,
+  UrlUtil,
+  WebrcadeApp,
   APP_TYPE_KEYS,
   LOG,
   TEXT_IDS
@@ -35,9 +36,9 @@ class App extends WebrcadeApp {
     const { appProps, emulator, ModeEnum } = this;
 
     // Determine extensions
-    const exts = 
+    const exts =
       AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, false);
-    const extsNotUnique = 
+    const extsNotUnique =
       AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, true);
 
     try {
@@ -51,6 +52,8 @@ class App extends WebrcadeApp {
       }
 
       emulator.loadJavatari()
+        .then(() => settings.load())
+        // .then(() => settings.setBilinearFilterEnabled(true))
         .then(() => new FetchAppData(rom).fetch())
         .then(response => response.blob())
         .then(blob => new Unzip().setDebug(this.isDebug()).unzip(blob, extsNotUnique, exts, romNameScorer))
