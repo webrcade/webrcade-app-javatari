@@ -12,6 +12,7 @@ import {
   TEXT_IDS
 } from '@webrcade/app-common'
 import { Emulator } from './emulator'
+import { EmulatorPauseScreen } from './pause';
 
 import './App.scss';
 
@@ -86,6 +87,20 @@ class App extends WebrcadeApp {
 
     this.setState({ showLoading: false });
     jtdiv.style.display = 'inline-block';
+  }
+
+  renderPauseScreen() {
+    const { appProps, emulator } = this;
+
+    return (
+      <EmulatorPauseScreen
+        emulator={emulator}
+        appProps={appProps}
+        closeCallback={() => this.resume()}
+        exitCallback={() => this.exit()}
+        isEditor={this.isEditor}
+      />
+    );
   }
 
   renderCanvas() {
