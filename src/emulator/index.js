@@ -5,8 +5,8 @@ import {
   AppWrapper,
   CIDS,
   LOG,
-  TEXT_IDS
-} from "@webrcade/app-common"
+  TEXT_IDS,
+} from '@webrcade/app-common';
 
 export class Emulator extends AppWrapper {
   constructor(app, debug = false) {
@@ -41,70 +41,79 @@ export class Emulator extends AppWrapper {
 
   setRom(blob, name) {
     if (blob.size === 0) {
-      throw new Error("The size is invalid (0 bytes).");
+      throw new Error('The size is invalid (0 bytes).');
     }
     this.romBlob = blob;
     this.romName = name ? name : 'rom';
   }
 
   setSwapJoysticks(swap) {
-    this.swapJoysticks = (swap === true);
+    this.swapJoysticks = swap === true;
   }
 
   pollControls = () => {
     const { app, controllers, javatari, swapJoysticks } = this;
     const { console } = javatari.room;
 
-    let SWCHA = 0xff;  // All directions of both controllers OFF
+    let SWCHA = 0xff; // All directions of both controllers OFF
     let SWCHB = 0x0b; // Reset OFF; Select OFF; B/W OFF; Difficult A/B OFF (Amateur)
 
     controllers.poll();
 
     for (let i = 0; i < 2; i++) {
-      const joy2 = (i === 1 ? !swapJoysticks : swapJoysticks);
+      const joy2 = i === 1 ? !swapJoysticks : swapJoysticks;
 
       if (controllers.isControlDown(i, CIDS.ESCAPE)) {
         if (this.pause(true)) {
-          controllers.waitUntilControlReleased(i, CIDS.ESCAPE)
+          controllers
+            .waitUntilControlReleased(i, CIDS.ESCAPE)
             .then(() => controllers.setEnabled(false))
-            .then(() => { app.pause(() => {
+            .then(() => {
+              app.pause(() => {
                 controllers.setEnabled(true);
                 this.pause(false);
               });
             })
-            .catch((e) => LOG.error(e))
+            .catch((e) => LOG.error(e));
           return;
         }
       }
 
       if (controllers.isControlDown(i, CIDS.RIGHT)) {
-        SWCHA &= (joy2 ? 0xf7 : 0x7f);
+        SWCHA &= joy2 ? 0xf7 : 0x7f;
       }
       if (controllers.isControlDown(i, CIDS.LEFT)) {
-        SWCHA &= (joy2 ? 0xfb : 0xbf);
+        SWCHA &= joy2 ? 0xfb : 0xbf;
       }
       if (controllers.isControlDown(i, CIDS.UP)) {
-        SWCHA &= (joy2 ? 0xfe : 0xef);
+        SWCHA &= joy2 ? 0xfe : 0xef;
       }
       if (controllers.isControlDown(i, CIDS.DOWN)) {
-        SWCHA &= (joy2 ? 0xfd : 0xdf);
+        SWCHA &= joy2 ? 0xfd : 0xdf;
       }
 
-      console.joyButtonPressed(joy2 ? 1 : 0, controllers.isControlDown(i, CIDS.A));
+      console.joyButtonPressed(
+        joy2 ? 1 : 0,
+        controllers.isControlDown(i, CIDS.A),
+      );
     }
 
-    if (controllers.isControlDown(0, CIDS.START) ||
-      controllers.isControlDown(1, CIDS.START)) {
+    if (
+      controllers.isControlDown(0, CIDS.START) ||
+      controllers.isControlDown(1, CIDS.START)
+    ) {
       SWCHB &= 0xfe;
     }
-    if (controllers.isControlDown(0, CIDS.SELECT) ||
-      controllers.isControlDown(1, CIDS.SELECT)) {
+    if (
+      controllers.isControlDown(0, CIDS.SELECT) ||
+      controllers.isControlDown(1, CIDS.SELECT)
+    ) {
       SWCHB &= 0xfd;
     }
 
     // joyButtonPressed
     console.updateControls(SWCHA, SWCHB);
-  }
+  };
 
   loadJavatari() {
     const { app } = this;
@@ -117,7 +126,7 @@ export class Emulator extends AppWrapper {
       script.onload = () => {
         const javatari = window.Javatari;
         if (javatari) {
-          this.javatari =  javatari;
+          this.javatari = javatari;
 
           javatari.audioCallback = (running) => {
             setTimeout(() => app.setShowOverlay(!running), 50);
@@ -142,19 +151,26 @@ export class Emulator extends AppWrapper {
           javatari.frameCallback = () => {
             // TODO: Debug info (FPS, etc.)
             if (canvas != null) {
-              if (settings.isBilinearFilterEnabled() && canvas.style['image-rendering'] !== 'auto') {
-                canvas.style.setProperty("image-rendering", "auto", "important");
+              if (
+                settings.isBilinearFilterEnabled() &&
+                canvas.style['image-rendering'] !== 'auto'
+              ) {
+                canvas.style.setProperty(
+                  'image-rendering',
+                  'auto',
+                  'important',
+                );
               }
             }
             if (!loadingHidden) {
               // Hack to try to avoid scroll when determining FPS
-              if (++frameCount >= (this.targetFps << 1)) {
+              if (++frameCount >= this.targetFps << 1) {
                 loadingHidden = true;
                 this.app.hideLoading();
               }
             }
             this.pollControls();
-          }
+          };
 
           resolve(javatari);
         } else {
@@ -179,7 +195,7 @@ export class Emulator extends AppWrapper {
       const reader = new FileReader();
       reader.onerror = () => {
         reader.abort();
-        reject("Error reading cartridge: " + reader.error);
+        reject('Error reading cartridge: ' + reader.error);
       };
 
       reader.onload = () => {
