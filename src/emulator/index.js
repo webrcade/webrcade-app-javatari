@@ -167,6 +167,9 @@ export class Emulator extends AppWrapper {
               if (++frameCount >= this.targetFps << 1) {
                 loadingHidden = true;
                 this.app.hideLoading();
+
+                // Enable message display
+                this.setShowMessageEnabled(true);
               }
             }
             this.pollControls();

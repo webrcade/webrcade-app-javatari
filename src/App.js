@@ -1,5 +1,6 @@
 import {
   romNameScorer,
+  setMessageAnchorId,
   settings,
   AppRegistry,
   FetchAppData,
@@ -28,6 +29,8 @@ class App extends WebrcadeApp {
 
   componentDidMount() {
     super.componentDidMount();
+
+    setMessageAnchorId('jt-screen-canvas');
 
     // Create the emulator
     if (this.emulator === null) {
