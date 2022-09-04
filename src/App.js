@@ -117,6 +117,7 @@ class App extends WebrcadeApp {
         closeCallback={() => this.resume()}
         exitCallback={() => this.exit()}
         isEditor={this.isEditor}
+        isStandalone={this.isStandalone}
       />
     );
   }
