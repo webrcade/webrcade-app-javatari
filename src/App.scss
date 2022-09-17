@@ -9,21 +9,21 @@
   width: 96vw !important;
   height: 96vh !important;
 
-  max-width: calc(96vh*1.435); // NTSC
-  max-height: calc(96vw*.697); // NTSC
+  max-width: calc(96vh * 1.435); // NTSC
+  max-height: calc(96vw * 0.697); // NTSC
 
   image-rendering: -moz-crisp-edges !important;
   image-rendering: -webkit-crisp-edges !important;
   image-rendering: pixelated !important;
-  image-rendering: crisp-edges !important;  
+  image-rendering: crisp-edges !important;
 }
 
 .pal-canvas {
-  max-width: calc(96vh*1.328) !important; // PAL
-  max-height: calc(96vw*.75) !important; // PAL
+  max-width: calc(96vh * 1.328) !important; // PAL
+  max-height: calc(96vw * 0.75) !important; // PAL
 }
 
-#javatari {  
+#javatari {
   display: none;
   border: 0;
   padding: 0;
@@ -31,5 +31,5 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  position: absolute;  
+  position: absolute;
 }

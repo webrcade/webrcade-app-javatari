@@ -1,16 +1,19 @@
 import {
   romNameScorer,
+  setMessageAnchorId,
+  settings,
   AppRegistry,
   FetchAppData,
   Resources,
-  Unzip, 
-  UrlUtil,  
-  WebrcadeApp,  
+  Unzip,
+  UrlUtil,
+  WebrcadeApp,
   APP_TYPE_KEYS,
   LOG,
-  TEXT_IDS
-} from '@webrcade/app-common'
-import { Emulator } from './emulator'
+  TEXT_IDS,
+} from '@webrcade/app-common';
+import { Emulator } from './emulator';
+import { EmulatorPauseScreen } from './pause';
 
 import './App.scss';
 
@@ -27,6 +30,8 @@ class App extends WebrcadeApp {
   componentDidMount() {
     super.componentDidMount();
 
+    setMessageAnchorId('jt-screen-canvas');
+
     // Create the emulator
     if (this.emulator === null) {
       this.emulator = new Emulator(this, this.isDebug());
@@ -35,31 +40,48 @@ class App extends WebrcadeApp {
     const { appProps, emulator, ModeEnum } = this;
 
     // Determine extensions
-    const exts = 
-      AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, false);
-    const extsNotUnique = 
-      AppRegistry.instance.getExtensions(APP_TYPE_KEYS.JAVATARI, true, true);
+    const exts = AppRegistry.instance.getExtensions(
+      APP_TYPE_KEYS.JAVATARI,
+      true,
+      false,
+    );
+    const extsNotUnique = AppRegistry.instance.getExtensions(
+      APP_TYPE_KEYS.JAVATARI,
+      true,
+      true,
+    );
 
     try {
       // Get the ROM location that was specified
       const rom = appProps.rom;
-      if (!rom) throw new Error("A ROM file was not specified.");
+      if (!rom) throw new Error('A ROM file was not specified.');
       // Swap controllers
       const swap = appProps.swap;
       if (swap) {
         emulator.setSwapJoysticks(swap);
       }
 
-      emulator.loadJavatari()
+      emulator
+        .loadJavatari()
+        .then(() => settings.load())
+        // .then(() => settings.setBilinearFilterEnabled(true))
         .then(() => new FetchAppData(rom).fetch())
-        .then(response => response.blob())
-        .then(blob => new Unzip().setDebug(this.isDebug()).unzip(blob, extsNotUnique, exts, romNameScorer))
-        .then(blob => emulator.setRom(blob, UrlUtil.getFileName(rom)))
+        .then((response) => response.blob())
+        .then((blob) =>
+          new Unzip()
+            .setDebug(this.isDebug())
+            .unzip(blob, extsNotUnique, exts, romNameScorer),
+        )
+        .then((blob) => emulator.setRom(blob, UrlUtil.getFileName(rom)))
         .then(() => this.setState({ mode: ModeEnum.LOADED }))
-        .catch(msg => {
+        .catch((msg) => {
           LOG.error(msg);
-          this.exit(this.isDebug() ? msg : Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME));
-        })
+          this.exit(
+            this.isDebug()
+              ? msg
+              : Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME),
+          );
+        });
     } catch (e) {
       this.exit(e);
     }
@@ -85,10 +107,35 @@ class App extends WebrcadeApp {
     jtdiv.style.display = 'inline-block';
   }
 
+  renderPauseScreen() {
+    const { appProps, emulator } = this;
+
+    return (
+      <EmulatorPauseScreen
+        emulator={emulator}
+        appProps={appProps}
+        closeCallback={() => this.resume()}
+        exitCallback={() => this.exit()}
+        isEditor={this.isEditor}
+        isStandalone={this.isStandalone}
+      />
+    );
+  }
+
   renderCanvas() {
     return (
-      <div id="javatari" ref={(jtdiv) => { this.jtdiv = jtdiv; }}>
-        <div ref={screen => { this.screen = screen; }}  id="javatari-screen"></div>
+      <div
+        id="javatari"
+        ref={(jtdiv) => {
+          this.jtdiv = jtdiv;
+        }}
+      >
+        <div
+          ref={(screen) => {
+            this.screen = screen;
+          }}
+          id="javatari-screen"
+        ></div>
       </div>
     );
   }
@@ -99,10 +146,10 @@ class App extends WebrcadeApp {
 
     return (
       <>
-        { super.render()}
-        { mode === ModeEnum.PAUSE ? this.renderPauseScreen() : null}
-        { showLoading && mode !== ModeEnum.ERROR ? this.renderLoading() : null}
-        { this.renderCanvas()}
+        {super.render()}
+        {mode === ModeEnum.PAUSE ? this.renderPauseScreen() : null}
+        {showLoading && mode !== ModeEnum.ERROR ? this.renderLoading() : null}
+        {this.renderCanvas()}
       </>
     );
   }
