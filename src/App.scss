@@ -6,21 +6,14 @@
 
 #jt-screen-canvas {
   // border: 1px solid red;
-  width: 96vw !important;
-  height: 96vh !important;
 
-  max-width: calc(96vh * 1.435); // NTSC
-  max-height: calc(96vw * 0.697); // NTSC
+  // width: 96vw !important;
+  // height: 96vh !important;
 
-  image-rendering: -moz-crisp-edges !important;
-  image-rendering: -webkit-crisp-edges !important;
+  // max-width: calc(96vh * 1.435); // NTSC
+  // max-height: calc(96vw * 0.697); // NTSC
+
   image-rendering: pixelated !important;
-  image-rendering: crisp-edges !important;
-}
-
-.pal-canvas {
-  max-width: calc(96vh * 1.328) !important; // PAL
-  max-height: calc(96vw * 0.75) !important; // PAL
 }
 
 #javatari {

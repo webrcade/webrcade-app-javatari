@@ -1,6 +1,5 @@
 import {
   addDebugDiv,
-  settings,
   Resources,
   AppWrapper,
   CIDS,
@@ -24,9 +23,24 @@ export class Emulator extends AppWrapper {
     }
   }
 
-  createStorage() {
-    // no storage
-    return null;
+  // createStorage() {
+  //   // no storage
+  //   return null;
+  // }
+
+  updateScreenSize() {
+    if (!this.jtCanvas) return;
+    this.canvas = this.jtCanvas;
+
+    super.updateScreenSize();
+  }
+
+  getDefaultAspectRatio() {
+    if (this.targetFps === 50) {
+      return 1.328;
+    } else {
+      return 1.435;
+    }
   }
 
   createVisibilityMonitor() {
@@ -117,6 +131,7 @@ export class Emulator extends AppWrapper {
 
   loadJavatari() {
     const { app } = this;
+    const emu = this;
 
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -134,38 +149,29 @@ export class Emulator extends AppWrapper {
           let canvas = null;
           javatari.videoStandardCallback = (std) => {
             canvas = document.getElementById('jt-screen-canvas');
+            emu.jtCanvas = canvas;
             if (canvas) {
               // Bilinear filter
               if (std.targetFPS === 50) {
                 this.targetFps = 50;
-                canvas.classList.add('pal-canvas');
+                 //canvas.classList.add('pal-canvas');
               } else {
                 this.targetFps = 60;
-                canvas.classList.remove('pal-canvas');
+                 //canvas.classList.remove('pal-canvas');
               }
+              emu.updateScreenSize();
             }
           };
 
           let loadingHidden = false;
           let frameCount = 0;
           javatari.frameCallback = () => {
-            // TODO: Debug info (FPS, etc.)
-            if (canvas != null) {
-              if (
-                settings.isBilinearFilterEnabled() &&
-                canvas.style['image-rendering'] !== 'auto'
-              ) {
-                canvas.style.setProperty(
-                  'image-rendering',
-                  'auto',
-                  'important',
-                );
-              }
-            }
             if (!loadingHidden) {
               // Hack to try to avoid scroll when determining FPS
               if (++frameCount >= this.targetFps << 1) {
                 loadingHidden = true;
+                emu.updateBilinearFilter();
+                emu.updateScreenSize();
                 this.app.hideLoading();
 
                 // Enable message display
