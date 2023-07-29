@@ -17,7 +17,7 @@ The underlying emulator is a [forked version](https://github.com/raz0red/javatar
 
 ## Documentation
 
-The [Atari 2600 Application Documentation](https://docs.webrcade.com/apps/emulators/2600/) includes [keyboard](https://docs.webrcade.com/apps/emulators/2600/#keyboard) and [gamepad](https://docs.webrcade.com/apps/emulators/2600/#gamepad) control mappings as well as information related to utilizing the emulator within a [webЯcade feed](https://docs.webrcade.com/apps/emulators/2600/#feed). 
+The [Atari 2600 Application Documentation](https://docs.webrcade.com/apps/emulators/2600/javatari/) includes [keyboard](https://docs.webrcade.com/apps/emulators/2600/javatari/#keyboard) and [gamepad](https://docs.webrcade.com/apps/emulators/2600/javatari/#gamepad) control mappings as well as information related to utilizing the emulator within a [webЯcade feed](https://docs.webrcade.com/apps/emulators/2600/javatari/#feed). 
 
 ## LICENSE
 
