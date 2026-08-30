@@ -1,15 +1,19 @@
 import {
   addDebugDiv,
   Resources,
-  AppWrapper,
+  BasicAppWrapper,
   CIDS,
   LOG,
   TEXT_IDS,
 } from '@webrcade/app-common';
 
-export class Emulator extends AppWrapper {
+export class Emulator extends BasicAppWrapper {
   constructor(app, debug = false) {
     super(app, debug);
+
+    // Read by the shared TouchOverlay component (webrcade-app-common) to
+    // reach the running emulator instance.
+    window.emulator = this;
 
     this.javatari = null;
     this.romBlob = null;
@@ -64,6 +68,12 @@ export class Emulator extends AppWrapper {
   setSwapJoysticks(swap) {
     this.swapJoysticks = swap === true;
   }
+
+  // Base class default pauses on any tap anywhere on screen -- redundant
+  // (and disruptive) now that there's a dedicated Pause button in the
+  // touch overlay. Same override snes9x/fceux/parallel-n64/vba-m/Coleco/
+  // A5200/Jaguar use for the same reason.
+  createTouchListener() {}
 
   pollControls = () => {
     const { app, controllers, javatari, swapJoysticks } = this;
@@ -179,6 +189,7 @@ export class Emulator extends AppWrapper {
               }
             }
             this.pollControls();
+            this.onFrame();
           };
 
           resolve(javatari);
